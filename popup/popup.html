@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outly Popup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-wrap">
+        <img src="../icons/icon48.png" alt="Outly" class="logo-img" id="logo-icon">
+        <span class="logo-text">OUTLY //</span>
+      </div>
+      <div class="header-actions">
+        <span class="api-badge" id="plan-badge">FREE</span>
+        <button class="logout-btn hidden" id="logout-btn">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main View Panel -->
+    <main class="view-panel" id="view-panel">
+      <!-- 1. Authentication View -->
+      <div class="view-section" id="auth-view">
+        <div class="section-card">
+          <div class="section-title">Sign In to Outly</div>
+          <form id="login-form">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" required placeholder="name@company.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="login-password">Password</label>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%;" id="login-submit-btn">
+              Authenticate
+            </button>
+          </form>
+          <div class="error-banner hidden" id="auth-error"></div>
+        </div>
+      </div>
+
+      <!-- 2. Warning View: Not on LinkedIn Search -->
+      <div class="view-section hidden" id="warning-view">
+        <div class="alert-card">
+          <div class="alert-title">LinkedIn Context Required</div>
+          <div class="alert-desc">
+            Please navigate to a LinkedIn content search results page to run the HR outreach assistant.
+          </div>
+          <button class="btn-primary" id="open-linkedin-btn">
+            Open LinkedIn Search
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Config & Scrape Dashboard View -->
+      <div class="view-section hidden" id="dashboard-view">
+        <!-- Configuration Card -->
+        <div class="section-card" id="config-card">
+          <div class="section-title">Outreach Configuration</div>
+          
+          <div class="form-group">
+            <label for="target-role">Target Role</label>
+            <input type="text" id="target-role" placeholder="e.g. Software Engineer" value="Software Engineer">
+          </div>
+
+          <div class="input-row">
+            <div class="form-group">
+              <label for="max-leads">Max Leads</label>
+              <input type="number" id="max-leads" value="10" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label for="subject-template">Subject Template</label>
+              <input type="text" id="subject-template" value="Application for {role} Role">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email-template">Email Body Guidelines / Context</label>
+            <textarea id="email-template" placeholder="Mention why you are interested in the role, or outline your experience briefly..."></textarea>
+          </div>
+
+          <button class="btn-primary" id="start-scrape-btn">
+            Start Outreach Run
+          </button>
+          <div class="error-banner hidden" id="run-error"></div>
+        </div>
+
+        <!-- Live Status Card -->
+        <div class="section-card hidden" id="status-card">
+          <div class="section-title">Live Scraper Status</div>
+          <div class="status-container">
+            <div class="status-row">
+              <div class="status-indicator">
+                <div class="dot-pulse" id="status-dot"></div>
+                <span id="status-text">Scanning DOM...</span>
+              </div>
+              <span id="posts-count-text">Found 0 posts</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="section-card hidden" id="results-card">
+          <div class="section-title">Execution Results</div>
+          <div class="results-table-container">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>v1.0.0</span>
+      <span class="monospace" id="status-footer">SYSTEM ONLINE</span>
+    </footer>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -91,6 +91,100 @@ function setupEventListeners() {
     });
   });
 
+  // Google Sign-In Button
+  const googleLoginBtn = document.getElementById('google-login-btn');
+  googleLoginBtn.addEventListener('click', async () => {
+    hideElement(authError);
+    setLoadingState(true);
+    
+    try {
+      const baseUrl = await getApiBaseUrl();
+      const clientId = '343152469164-pafau4u4nbkljrqi5ia3shb8qb84p1bn.apps.googleusercontent.com';
+      const redirectUri = chrome.identity.getRedirectURL(); // e.g., https://<extension-id>.chromiumapp.org/
+      
+      const nonce = Math.random().toString(36).slice(2);
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `response_type=id_token&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `scope=${encodeURIComponent('openid email profile')}&` +
+        `nonce=${nonce}`;
+
+      console.log('Direct Google Auth URL:', authUrl);
+      console.log('Extension Redirect URI:', redirectUri);
+
+      chrome.identity.launchWebAuthFlow({
+        url: authUrl,
+        interactive: true
+      }, async (redirectUrl) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError || !redirectUrl) {
+          console.warn('Google Auth Cancelled or Failed:', lastError);
+          showError(authError, lastError ? lastError.message : 'Google login cancelled.');
+          setLoadingState(false);
+          return;
+        }
+
+        try {
+          // Parse the id_token from the redirected hash fragment
+          const hash = new URL(redirectUrl).hash.slice(1);
+          const params = new URLSearchParams(hash);
+          const idToken = params.get('id_token');
+
+          if (!idToken) {
+            showError(authError, 'Did not receive ID token from Google.');
+            setLoadingState(false);
+            return;
+          }
+
+          // Exchange Google ID Token for JWT session with backend
+          const response = await fetch(`${baseUrl}/api/auth/google-login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ credential: idToken })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            showError(authError, errData.message || 'Google verification with backend failed.');
+            setLoadingState(false);
+            return;
+          }
+
+          const data = await response.json();
+          let token = data.token;
+
+          // Fallback to cookie if token is not in the JSON response
+          if (!token) {
+            const cookie = await chrome.cookies.get({ url: baseUrl, name: 'hra_token' });
+            token = cookie ? cookie.value : null;
+          }
+
+          if (token) {
+            await chrome.storage.local.set({
+              token: token,
+              user: data.user
+            });
+            await checkAuthState();
+          } else {
+            showError(authError, 'Authenticated with Google, but session could not be established.');
+          }
+        } catch (err) {
+          console.error('SSO Token Parsing Error:', err);
+          showError(authError, `Failed to initialize session: ${err.message}`);
+        } finally {
+          setLoadingState(false);
+        }
+      });
+    } catch (err) {
+      console.error('Google OAuth Trigger Error:', err);
+      showError(authError, err.message);
+      setLoadingState(false);
+    }
+  });
+
   // Start Scraping Button
   startScrapeBtn.addEventListener('click', async () => {
     hideElement(runError);
@@ -229,7 +323,16 @@ async function processLeads(posts) {
  * Check user authentication state and display views accordingly
  */
 async function checkAuthState() {
-  const storage = await chrome.storage.local.get(['token', 'user']);
+  let storage = await chrome.storage.local.get(['token', 'user']);
+  
+  if (!storage.token) {
+    // Try to get token from shared session cookie (e.g. SSO from Google login)
+    const session = await checkWebSession();
+    if (session) {
+      storage = session;
+    }
+  }
+
   const user = storage.user;
 
   if (storage.token && user) {
@@ -273,6 +376,37 @@ async function checkAuthState() {
     hideElement(warningView);
     statusFooter.textContent = 'SYSTEM OFFLINE';
   }
+}
+
+/**
+ * Tries to read the backend session cookie to log the user in automatically (SSO)
+ */
+async function checkWebSession() {
+  try {
+    const baseUrl = await getApiBaseUrl();
+    const cookie = await chrome.cookies.get({ url: baseUrl, name: 'hra_token' });
+    if (cookie && cookie.value) {
+      const token = cookie.value;
+      
+      // Fetch user profile details to ensure the token is valid
+      const response = await fetch(`${baseUrl}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        await chrome.storage.local.set({
+          token: token,
+          user: data.user
+        });
+        return { token, user: data.user };
+      }
+    }
+  } catch (err) {
+    console.warn('SSO Cookie Check skipped:', err.message);
+  }
+  return null;
 }
 
 /**

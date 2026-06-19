@@ -1,7 +1,7 @@
 // Outly Chrome Extension Background Service Worker
 
 // Default Backend URL fallback
-const DEFAULT_API_URL = 'http://localhost:3000';
+const DEFAULT_API_URL = 'https://outly-production-9f82.up.railway.app';
 
 // Listen for messages from the popup or content script
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

@@ -1,6 +1,6 @@
 // Outly Chrome Extension API Utilities
 
-const DEFAULT_API_URL = 'http://localhost:3000';
+const DEFAULT_API_URL = 'https://outly-production-9f82.up.railway.app';
 
 /**
  * Retrieves the base API URL stored in local storage, defaulting to localhost.

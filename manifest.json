@@ -3,7 +3,7 @@
   "name": "Outly — AI HR Outreach Agent",
   "version": "1.0.0",
   "description": "Find hiring HRs on LinkedIn and send personalized cold emails automatically.",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "cookies", "identity"],
   "host_permissions": [
     "https://www.linkedin.com/*",
     "http://localhost:3000/*",
